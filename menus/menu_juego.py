@@ -1,113 +1,124 @@
-from core.sudoku_generator import crear_nuevo_juego
-from utils.input_handler import obtener_opcion_valida
-from utils.display import mostrar_mensaje
-
-class ConfiguracionJuego:
-    def __init__(self):
-        self.tipo_sudoku = 9  # Por defecto 9x9
-        self.dificultad = "Medio"  # Por defecto dificultad media
-
-config_juego = ConfiguracionJuego()
+from core.sudoku_generator import crear_nuevo_juego, SudokuGenerator
 
 def menu_jugar_sudoku():
     while True:
-        print("\n=== CONFIGURACIÓN DE JUEGO ===")
-        print("1. Seleccionar tipo de Sudoku")
-        print("2. Seleccionar nivel de dificultad")
-        print("3. Comenzar juego")
-        print("4. Volver al menú principal")
+        print("\n=== MENÚ PRINCIPAL SUDOKU 4x4 ===")
+        print("1. Jugar Sudoku")
+        print("2. Ver instrucciones")
+        print("3. Salir")
 
-        opcion = obtener_opcion_valida(1, 4)
-
-        if opcion == 1:
-            seleccionar_tipo_sudoku()
-        elif opcion == 2:
-            seleccionar_dificultad()
-        elif opcion == 3:
-            iniciar_juego()
-        elif opcion == 4:
+        opcion = input("Seleccione una opción (1-3): ")
+        if opcion == "1":
+            jugar_sudoku()
+        elif opcion == "2":
+            mostrar_instrucciones()
+        elif opcion == "3":
+            print("¡Gracias por jugar!")
             break
+        else:
+            print("Opción inválida. Por favor, intente de nuevo.")
 
-def seleccionar_tipo_sudoku():
-    print("\n=== TIPOS DE SUDOKU ===")
-    print("1. Sudoku Clásico (9x9)")
-    print("2. Sudoku Mini (6x6)")
-    print("3. Volver")
-
-    opcion = obtener_opcion_valida(1, 3)
-    if opcion == 1:
-        config_juego.tipo_sudoku = 9
-        mostrar_mensaje("Has seleccionado Sudoku Clásico (9x9)")
-    elif opcion == 2:
-        config_juego.tipo_sudoku = 6
-        mostrar_mensaje("Has seleccionado Sudoku Mini (6x6)")
+def mostrar_instrucciones():
+    print("\n=== INSTRUCCIONES ===")
+    print("1. El objetivo es llenar una cuadrícula de 4x4 con números del 1 al 4")
+    print("2. Cada número debe aparecer una sola vez en cada fila")
+    print("3. Cada número debe aparecer una sola vez en cada columna")
+    print("4. Cada número debe aparecer una sola vez en cada subcuadrícula de 2x2")
+    print("\nPresione Enter para continuar...")
+    input()
 
 def seleccionar_dificultad():
-    print("\n=== NIVEL DE DIFICULTAD ===")
-    print("1. Fácil")
-    print("2. Medio")
-    print("3. Difícil")
-    print("4. Volver")
-
-    opcion = obtener_opcion_valida(1, 4)
-    if opcion == 1:
-        config_juego.dificultad = "Fácil"
-    elif opcion == 2:
-        config_juego.dificultad = "Medio"
-    elif opcion == 3:
-        config_juego.dificultad = "Difícil"
-
-    if opcion in [1, 2, 3]:
-        mostrar_mensaje(f"Has seleccionado el nivel: {config_juego.dificultad}")
-
-def iniciar_juego():
-    tablero, solucion = crear_nuevo_juego(config_juego.tipo_sudoku, config_juego.dificultad)
-    jugar_sudoku(tablero, solucion)
-
-def jugar_sudoku(tablero, solucion):
     while True:
-        print("\n=== SUDOKU ===")
-        imprimir_tablero(tablero)
-        print("\nComandos:")
-        print("- Ingresar jugada: fila columna valor (ejemplo: 1 2 5)")
-        print("- Salir: 0")
+        print("\n=== SELECCIONAR DIFICULTAD ===")
+        print("1. Fácil (6 casillas vacías)")
+        print("2. Difícil (10 casillas vacías)")
 
-        entrada = input("\nIngrese su jugada o 0 para salir: ").strip()
+        opcion = input("Seleccione la dificultad (1-2): ")
+        if opcion == "1":
+            return "Fácil"
+        elif opcion == "2":
+            return "Difícil"
+        else:
+            print("Opción inválida. Por favor, intente de nuevo.")
 
-        if entrada == "0":
-            break
+def seleccionar_representacion():
+    print("\n=== TIPO DE REPRESENTACIÓN ===")
+    print("1. Números (1-4)")
+    print("2. Letras (A-D)")
+    print("3. Símbolos (★, ♦, ♣, ♠)")
 
-        try:
-            fila, col, valor = map(int, entrada.split())
-            if validar_entrada(fila, col, valor, tablero):
-                if valor == solucion[fila-1][col-1]:
-                    tablero[fila-1][col-1] = valor
-                    if tablero_completo(tablero):
+    while True:
+        opcion = input("Seleccione el tipo de representación (1-3): ")
+        tipos = {
+            "1": "numeros",
+            "2": "letras",
+            "3": "simbolos"
+        }
+        if opcion in tipos:
+            return tipos[opcion]
+        print("Opción inválida. Por favor, intente de nuevo.")
+
+def jugar_sudoku():
+    while True:  # Bucle principal para múltiples juegos
+        dificultad = seleccionar_dificultad()
+        tipo_representacion = seleccionar_representacion()
+
+        tablero, solucion = crear_nuevo_juego(dificultad, tipo_representacion)
+        generador = SudokuGenerator(
+            tipo_representacion=tipo_representacion,
+            dificultad=dificultad
+        )
+        generador.tablero = tablero
+
+        while True:  # Bucle para un juego individual
+            print(f"\n=== SUDOKU 4x4 - Nivel: {dificultad} ===")
+            generador.imprimir_tablero()
+            print("\nComandos:")
+            print("- Para jugar: ingrese fila columna valor (ejemplo: 1 2 3)")
+            print("- Para salir: ingrese 'salir'")
+
+            entrada = input("\nIngrese su jugada: ").lower()
+            if entrada == 'salir':
+                return  # Salir completamente del juego
+
+            try:
+                fila, columna, valor = map(int, entrada.split())
+                if not (1 <= fila <= 4 and 1 <= columna <= 4 and 1 <= valor <= 4):
+                    print("Los números deben estar entre 1 y 4")
+                    continue
+
+                # Ajustar índices
+                fila -= 1
+                columna -= 1
+
+                if tablero[fila][columna] != 0:
+                    print("¡Esta casilla ya está ocupada!")
+                    continue
+
+                if valor == solucion[fila][columna]:
+                    tablero[fila][columna] = valor
+                    generador.tablero = tablero
+
+                    if all(all(cell != 0 for cell in row) for row in tablero):
                         print("\n¡Felicitaciones! ¡Has completado el Sudoku!")
-                        break
+                        generador.imprimir_tablero()
+
+                        # Preguntar si quiere jugar otro Sudoku
+                        while True:
+                            respuesta = input("\n¿Desea jugar otro Sudoku? (s/n): ").lower()
+                            if respuesta in ['s', 'n']:
+                                break
+                            print("Por favor, responda 's' para sí o 'n' para no")
+
+                        if respuesta == 'n':
+                            return  # Salir al menú principal
+                        else:
+                            break  # Romper el bucle interno para comenzar un nuevo juego
+
                 else:
-                    print("\nValor incorrecto. Intenta de nuevo.")
-            else:
-                print("\nEntrada inválida. Asegúrate de que los números estén dentro del rango permitido.")
-        except ValueError:
-            print("\nEntrada inválida. Usa el formato: fila columna valor")
+                    print("¡Valor incorrecto! Intenta de nuevo.")
 
-def imprimir_tablero(tablero):
-    size = len(tablero)
-    box_size = 3 if size == 9 else 2
-
-    print("    " + " ".join(str(i+1) for i in range(size)))
-    print("  +" + "-" * (size * 2 + 1))
-
-    for i in range(size):
-        print(f"{i+1} | ", end="")
-        for j in range(size):
-            print(tablero[i][j] if tablero[i][j] != 0 else "·", end=" ")
-        print()
-
-def validar_entrada(fila, col, valor, tablero):
-    size = len(tablero)
-    return 1 <= fila <= size and 1 <= col <= size and 1 <= valor <= size
-
-def tablero_completo(tablero):
-    return all(all(cell != 0 for cell in row) for row in tablero)
+            except ValueError:
+                print("Entrada inválida. Use el formato: fila columna valor")
+            except IndexError:
+                print("Posición inválida. Los números deben estar entre 1 y 4")
