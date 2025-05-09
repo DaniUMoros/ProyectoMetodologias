@@ -30,13 +30,12 @@ def menu_jugar_sudoku():
 
 def seleccionar_tipo_sudoku():
     print("\n=== TIPOS DE SUDOKU ===")
-    print("1. Sudoku Clásico (9x9)")
-    print("2. Sudoku Mini (6x6)")
-    print("3. Volver")
+    print("1. Sudoku 4X4")
+    print("2. Volver")
 
-    opcion = obtener_opcion_valida(1, 3)
+    opcion = obtener_opcion_valida(1, 2)
     if opcion == 1:
-        config_juego.tipo_sudoku = 9
+        config_juego.tipo_sudoku = 1
         mostrar_mensaje("Has seleccionado Sudoku Clásico (9x9)")
     elif opcion == 2:
         config_juego.tipo_sudoku = 6
@@ -45,26 +44,23 @@ def seleccionar_tipo_sudoku():
 def seleccionar_dificultad():
     print("\n=== NIVEL DE DIFICULTAD ===")
     print("1. Fácil")
-    print("2. Medio")
-    print("3. Difícil")
-    print("4. Volver")
+    print("2. Difícil")
+    print("3. Volver")
 
-    opcion = obtener_opcion_valida(1, 4)
+    opcion = obtener_opcion_valida(1, 3)
     if opcion == 1:
         config_juego.dificultad = "Fácil"
     elif opcion == 2:
-        config_juego.dificultad = "Medio"
-    elif opcion == 3:
         config_juego.dificultad = "Difícil"
 
-    if opcion in [1, 2, 3]:
+    if opcion in [1, 2]:
         mostrar_mensaje(f"Has seleccionado el nivel: {config_juego.dificultad}")
 
 def iniciar_juego():
-    tablero, solucion = crear_nuevo_juego(config_juego.tipo_sudoku, config_juego.dificultad)
-    jugar_sudoku(tablero, solucion)
+    tablero, solucion = crear_nuevo_juego(6, {config_juego.dificultad})
+    #jugar_sudoku(tablero, solucion)
 
-def jugar_sudoku(tablero, solucion):
+#def jugar_sudoku(tablero, solucion):
     while True:
         print("\n=== SUDOKU ===")
         imprimir_tablero(tablero)

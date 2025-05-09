@@ -2,42 +2,37 @@ import random
 import copy
 
 class SudokuGenerator:
-    def __init__(self, size=9, vacios=30):
+    def __init__(self, size=4, vacios=6):
         """
-        Inicializa el generador de Sudoku
-        :param size: Tamaño del tablero (9 para 9x9, 6 para 6x6)
+        Inicializa el generador de Sudoku 4×4
+        :param size: Tamaño del tablero (4 para 4x4)
         :param vacios: Número de celdas vacías para el puzzle
         """
         self.size = size
         self.vacios = vacios
-        self.box_size = 3 if size == 9 else 2  # Tamaño de cada subgrilla
+        self.box_size = 2  # Subcuadrantes 2×2
         self.tablero = [[0 for _ in range(size)] for _ in range(size)]
 
     def es_valido(self, num, pos):
-        """Verifica si un número es válido en una posición dada"""
-        # Verificar fila
-        for x in range(self.size):
-            if self.tablero[pos[0]][x] == num and pos[1] != x:
-                return False
-
-        # Verificar columna
-        for x in range(self.size):
-            if self.tablero[x][pos[1]] == num and pos[0] != x:
-                return False
-
-        # Verificar subgrilla
-        box_x = pos[1] // self.box_size
-        box_y = pos[0] // self.box_size
-
-        for i in range(box_y * self.box_size, box_y * self.box_size + self.box_size):
-            for j in range(box_x * self.box_size, box_x * self.box_size + self.box_size):
-                if self.tablero[i][j] == num and (i, j) != pos:
+        """Verifica si un número es válido en la posición pos=(fila,col)"""
+        fila, col = pos
+        # Fila
+        if any(self.tablero[fila][j] == num for j in range(self.size) if j != col):
+            return False
+        # Columna
+        if any(self.tablero[i][col] == num for i in range(self.size) if i != fila):
+            return False
+        # Subcuadrante 2×2
+        box_row = (fila // self.box_size) * self.box_size
+        box_col = (col   // self.box_size) * self.box_size
+        for i in range(box_row, box_row + self.box_size):
+            for j in range(box_col, box_col + self.box_size):
+                if (i, j) != pos and self.tablero[i][j] == num:
                     return False
-
         return True
 
     def encontrar_vacio(self):
-        """Encuentra una posición vacía en el tablero"""
+        """Encuentra la primera casilla vacía (0), devuelve (fila, col) o None"""
         for i in range(self.size):
             for j in range(self.size):
                 if self.tablero[i][j] == 0:
@@ -45,88 +40,115 @@ class SudokuGenerator:
         return None
 
     def resolver(self):
-        """Resuelve el tablero de Sudoku usando backtracking"""
+        """Resuelve el tablero completo usando backtracking"""
         vacio = self.encontrar_vacio()
         if not vacio:
             return True
-
         fila, col = vacio
         nums = list(range(1, self.size + 1))
         random.shuffle(nums)
-
         for num in nums:
             if self.es_valido(num, (fila, col)):
                 self.tablero[fila][col] = num
-
                 if self.resolver():
                     return True
-
                 self.tablero[fila][col] = 0
-
         return False
 
     def generar_sudoku(self):
-        """Genera un nuevo puzzle de Sudoku"""
-        # Generar solución completa
+        """Genera el puzzle: devuelve (tablero_con_huecos, solucion_completa)"""
+        # 1) Generar solución completa
         self.resolver()
-
-        # Hacer una copia de la solución
         solucion = copy.deepcopy(self.tablero)
-
-        # Crear puzzle eliminando números
+        # 2) Vaciar 'vacios' casillas al azar
         posiciones = [(i, j) for i in range(self.size) for j in range(self.size)]
-        for _ in range(self.vacios):
-            if not posiciones:
-                break
+        for _ in range(min(self.vacios, len(posiciones))):
             pos = random.choice(posiciones)
             posiciones.remove(pos)
             self.tablero[pos[0]][pos[1]] = 0
-
         return self.tablero, solucion
 
     def imprimir_tablero(self):
-        """Imprime el tablero de manera formateada"""
-        for i in range(self.size):
-            if i % self.box_size == 0 and i != 0:
-                print("-" * (self.size * 3 + self.box_size + 1))
+        """Imprime el tablero formateado (usa '.' para vacíos)"""
+        # Encabezado de columnas
+        print("   " + " ".join(str(j) for j in range(self.size)))
+        for i, fila in enumerate(self.tablero):
+            linea = " ".join(str(n) if n != 0 else "." for n in fila)
+            print(f"{i}  {linea}")
+        print()
 
-            for j in range(self.size):
-                if j % self.box_size == 0 and j != 0:
-                    print("|", end=" ")
-
-                if j == self.size - 1:
-                    print(self.tablero[i][j])
-                else:
-                    print(str(self.tablero[i][j]) + " ", end="")
-
-def crear_nuevo_juego(size=9, dificultad="Medio"):
+def crear_nuevo_juego(vacios, delimiter):
     """
-    Crea un nuevo juego de Sudoku
-    :param size: Tamaño del tablero (9 o 6)
-    :param dificultad: "Fácil", "Medio" o "Difícil"
-    :return: tupla (tablero_juego, solucion)
+    Bucle principal de juego:
+    - vacios: número de casillas vacías
+    - delimiter: cadena para delimitar el tablero ('***' o '---')
     """
-    # Definir número de celdas vacías según dificultad y tamaño
-    vacios = {
-        9: {"Fácil": 30, "Medio": 40, "Difícil": 50},
-        6: {"Fácil": 15, "Medio": 20, "Difícil": 25}
-    }
+    gen = SudokuGenerator(size=4, vacios=vacios)
+    tablero, solucion = gen.generar_sudoku()
 
-    num_vacios = vacios[size][dificultad]
-    generador = SudokuGenerator(size, num_vacios)
-    return generador.generar_sudoku()
+    while True:
+        # Mostrar tablero delimitado
+        print(delimiter)
+        gen.tablero = tablero
+        gen.imprimir_tablero()
+        print(delimiter)
 
-# Ejemplo de uso
+        # Comprueba si terminó
+        if all(all(celda != 0 for celda in fila) for fila in tablero):
+            print("¡Felicidades! Has completado el Sudoku.\n")
+            break
+
+        entrada = input("Ingresa fila,columna (0–3) o 'q' para salir: ")
+        if entrada.lower() == 'q':
+            print("Juego terminado. ¡Hasta pronto!")
+            return
+
+        try:
+            fila, col = map(int, entrada.split(','))
+            if not (0 <= fila < 4 and 0 <= col < 4):
+                print("Coordenadas fuera de rango. Usa valores entre 0 y 3.\n")
+                continue
+            if tablero[fila][col] != 0:
+                print("Ese espacio ya está ocupado.\n")
+                continue
+
+            num = int(input("Ingresa el número (1–4): "))
+            if not (1 <= num <= 4):
+                print("Número inválido. Debe ser entre 1 y 4.\n")
+                continue
+
+            if gen.es_valido(num, (fila, col)):
+                tablero[fila][col] = num
+            else:
+                print("Movimiento inválido según las reglas del Sudoku.\n")
+
+        except ValueError:
+            print("Formato incorrecto. Usa 'fila,columna', por ejemplo: 1,2\n")
+
+    # Al completar, mostrar la solución también delimitada
+    print("Solución completa:")
+    print(delimiter)
+    gen.tablero = solucion
+    gen.imprimir_tablero()
+    print(delimiter)
+
 if __name__ == "__main__":
-    # Crear un nuevo juego 9x9 de dificultad media
-    tablero, solucion = crear_nuevo_juego(9, "Medio")
+    print("=== SUDOKU 4×4 EN CONSOLA ===")
+    # Menú de dificultad
+    while True:
+        print("Selecciona el nivel de dificultad:")
+        print("1. Fácil   (6 casillas vacías, delimitado por ***)")
+        print("2. Difícil (10 casillas vacías, delimitado por ---)")
+        opcion = input("Opción (1/2): ")
+        if opcion == "1":
+            vacios = 6
+            delimiter = "***"
+            break
+        elif opcion == "2":
+            vacios = 10
+            delimiter = "---"
+            break
+        else:
+            print("Opción inválida. Elige 1 o 2.\n")
 
-    print("=== NUEVO JUEGO DE SUDOKU ===")
-    generador = SudokuGenerator()
-    generador.tablero = tablero
-    print("\nTablero del juego:")
-    generador.imprimir_tablero()
-
-    print("\nSolución:")
-    generador.tablero = solucion
-    generador.imprimir_tablero()
+    crear_nuevo_juego(vacios, delimiter)
