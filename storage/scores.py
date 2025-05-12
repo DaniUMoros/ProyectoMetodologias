@@ -1,61 +1,27 @@
-class SistemaPuntajes:
-    def __init__(self):
-        self.puntaje_total = 0
-        self.tableros_consecutivos = 0
-        self.mejor_racha = 0
-        self.tableros_completados = 0
+import json
+import os
 
-    def calcular_bonificacion(self):
-        """Calcula la bonificación basada en tableros consecutivos completados"""
-        if self.tableros_consecutivos <= 1:
-            return 0
-        return self.tableros_consecutivos - 1
+# Ruta al archivo de scores
+SCORES_PATH = os.path.join(os.path.dirname(__file__), 'scores.json')
 
-    def tablero_completado(self):
-        """Registra un tablero completado exitosamente"""
-        self.tableros_consecutivos += 1
-        self.tableros_completados += 1
+def cargar_scores():
+    """
+    Lee y devuelve la lista de records desde scores.json.
+    Si no existe el archivo, devuelve lista vacía.
+    Cada record es un dict con los campos:
+      - nombre
+      - puntaje_por_sudoku (lista de ints)
+      - puntos_bonificacion (lista de ints)
+      - tableros_completados (int)
+    """
+    if not os.path.isfile(SCORES_PATH):
+        return []
+    with open(SCORES_PATH, 'r', encoding='utf-8') as f:
+        return json.load(f)
 
-        # Actualizar mejor racha
-        if self.tableros_consecutivos > self.mejor_racha:
-            self.mejor_racha = self.tableros_consecutivos
-
-        # Puntaje base por completar tablero
-        puntaje_base = 10
-        # Bonificación por racha
-        bonificacion = self.calcular_bonificacion()
-
-        puntaje_ganado = puntaje_base + bonificacion
-        self.puntaje_total += puntaje_ganado
-
-        return {
-            'puntaje_base': puntaje_base,
-            'bonificacion': bonificacion,
-            'puntaje_total': puntaje_ganado,
-            'racha_actual': self.tableros_consecutivos
-        }
-
-    def tablero_fallido(self):
-        """Registra un fallo en el tablero actual"""
-        self.tableros_consecutivos = 0
-
-    def obtener_estadisticas(self):
-        """Retorna las estadísticas actuales"""
-        return {
-            'puntaje_total': self.puntaje_total,
-            'tableros_completados': self.tableros_completados,
-            'racha_actual': self.tableros_consecutivos,
-            'mejor_racha': self.mejor_racha
-        }
-
-# Variable global para mantener una instancia del sistema de puntajes
-sistema_puntajes = SistemaPuntajes()
-
-def ver_mejores_puntajes():
-    """Muestra las estadísticas actuales del jugador"""
-    estadisticas = sistema_puntajes.obtener_estadisticas()
-    print("\n=== Estadísticas del Jugador ===")
-    print(f"Puntaje Total: {estadisticas['puntaje_total']}")
-    print(f"Tableros Completados: {estadisticas['tableros_completados']}")
-    print(f"Racha Actual: {estadisticas['racha_actual']}")
-    print(f"Mejor Racha: {estadisticas['mejor_racha']}")
+def guardar_scores(records):
+    """
+    Sobrescribe scores.json con la lista de records.
+    """
+    with open(SCORES_PATH, 'w', encoding='utf-8') as f:
+        json.dump(records, f, ensure_ascii=False, indent=2)

@@ -1,0 +1,12 @@
+[
+  {
+    "nombre": "STEVEN",
+    "puntaje_por_sudoku": [
+      10
+    ],
+    "puntos_de_bonificacion": [
+      0
+    ],
+    "tableros_completados": 1
+  }
+]
