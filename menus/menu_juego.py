@@ -1,4 +1,5 @@
 from core.sudoku_generator import crear_nuevo_juego, SudokuGenerator
+from storage.scores import cargar_scores, guardar_scores
 
 def menu_jugar_sudoku():
     while True:
@@ -59,6 +60,11 @@ def seleccionar_representacion():
         print("Opción inválida. Por favor, intente de nuevo.")
 
 def jugar_sudoku():
+
+    puntuaciones = []        # lista de puntaje obtenido en cada sudoku
+    bonificaciones = []      # lista de bonus aplicado en cada sudoku
+    tableros_completados = 0
+    
     while True:  # Bucle principal para múltiples juegos
         dificultad = seleccionar_dificultad()
         tipo_representacion = seleccionar_representacion()
@@ -79,7 +85,9 @@ def jugar_sudoku():
 
             entrada = input("\nIngrese su jugada: ").lower()
             if entrada == 'salir':
-                return  # Salir completamente del juego
+                return   actualizar_records(
+                    puntuaciones, bonificaciones, tableros_completados
+                )
 
             try:
                 fila, columna, valor = map(int, entrada.split())
@@ -100,25 +108,73 @@ def jugar_sudoku():
                     generador.tablero = tablero
 
                     if all(all(cell != 0 for cell in row) for row in tablero):
-                        print("\n¡Felicitaciones! ¡Has completado el Sudoku!")
+                        tableros_completados += 1
+                        # Calcular bonus: 0 en el 1º, luego 1,2,4...
+                        bonus = 0 if tableros_completados == 1 else 2**(tableros_completados-2)
+                        puntos = 10 + bonus
+                        puntuaciones.append(puntos)
+                        bonificaciones.append(bonus)
+
+                        print("\n¡Has completado el Sudoku!")
                         generador.imprimir_tablero()
+                        print(f"➜ Ganaste {puntos} puntos (10 + bonus {bonus}).\n")
 
-                        # Preguntar si quiere jugar otro Sudoku
+                        # ¿Otro sudoku?
                         while True:
-                            respuesta = input("\n¿Desea jugar otro Sudoku? (s/n): ").lower()
-                            if respuesta in ['s', 'n']:
+                            resp = input("¿Jugar otro Sudoku? (s/n): ").lower().strip()
+                            if resp in ['s','n']:
                                 break
-                            print("Por favor, responda 's' para sí o 'n' para no")
-
-                        if respuesta == 'n':
-                            return  # Salir al menú principal
+                            print("Responde 's' o 'n'.")
+                        if resp == 'n':
+                            # sale de la serie y actualiza records
+                            return actualizar_records(
+                                puntuaciones, bonificaciones, tableros_completados
+                            )
                         else:
-                            break  # Romper el bucle interno para comenzar un nuevo juego
+                            # inicia siguiente sudoku
+                            break
 
                 else:
                     print("¡Valor incorrecto! Intenta de nuevo.")
 
             except ValueError:
-                print("Entrada inválida. Use el formato: fila columna valor")
+                print("Entrada inválida. Use: fila columna valor (ej: 1 2 3)")
             except IndexError:
-                print("Posición inválida. Los números deben estar entre 1 y 4")
+                print("Posición inválida. Valores entre 1 y 4")
+
+
+def actualizar_records(puntuaciones, bonificaciones, tableros_completados):
+    """
+    Al finalizar la serie, compara con los records,
+    pide nombre si se superó el mejor puntaje y guarda en JSON.
+    """
+    total_score = sum(puntuaciones)
+    print(f"\n=== Serie finalizada: {tableros_completados} tableros completados ===")
+    print(f"Puntuaciones: {puntuaciones}")
+    print(f"Bonificaciones: {bonificaciones}")
+    print(f"Puntuación total: {total_score}\n")
+
+    # Cargar lista de records existentes
+    records = cargar_scores()
+    # Obtener mejor total actual (0 si lista vacía)
+    mejor_actual = 0
+    if records:
+        mejor_actual = max(sum(r['puntaje_por_sudoku']) for r in records)
+
+    if total_score > mejor_actual:
+        nombre = input("¡Nuevo récord! Ingresa tu nombre: ").strip() or "Anónimo"
+        nuevo = {
+            "nombre": nombre,
+            "puntaje_por_sudoku": puntuaciones,
+            "puntos_de_bonificacion": bonificaciones,
+            "tableros_completados": tableros_completados
+        }
+        records.append(nuevo)
+        # Ordenar de mayor a menor total
+        records.sort(key=lambda r: sum(r['puntaje_por_sudoku']), reverse=True)
+        guardar_scores(records)
+        print("Récord guardado en scores.json.\n")
+    else:
+        print(f"No superaste el mejor puntaje actual de {mejor_actual}.\n")
+
+    return  # vuelve al menú principal
